@@ -1,0 +1,46 @@
+#include <api.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <csprng_hash.h>
+
+int cross_crypto_sign_keypair(unsigned char **pk, unsigned char **sk) {
+    // TODO: Get a better understanding of the seeding and posssible impact on performance!
+    csprng_initialize(&platform_csprng_state,
+                      (const unsigned char *)"012345678912345",
+                      16,
+                      0);
+
+    *pk = malloc(CRYPTO_PUBLICKEYBYTES);
+    *sk = malloc(CRYPTO_SECRETKEYBYTES);
+    if (!*pk || !*sk) {
+        perror("Malloc failed allocating memory for keypair!");
+        return -1;
+    }
+	return crypto_sign_keypair(*pk, *sk);
+}
+
+int cross_crypto_sign(unsigned char **sm, size_t *smlen,
+            const unsigned char *m, size_t mlen,
+            const unsigned char *sk) {
+    *sm = malloc(sizeof(**sm) * (mlen + CRYPTO_BYTES)); 
+    if (!*sm) {
+        perror("Malloc failed allocating memory for signing!");
+        return -1;
+    }
+
+	return crypto_sign(*sm, (unsigned long long*)smlen, m, mlen, sk);
+}
+
+int cross_crypto_sign_open(unsigned char **m, size_t *mlen,
+                 const unsigned char *sm, size_t smlen,
+                 const unsigned char *pk,
+                 size_t orig_msg_len, size_t hybrid_len) {
+
+    //*m = malloc(sizeof(**m) * (orig_msg_len + CRYPTO_BYTES) * hybrid_len);
+    *m = malloc(sizeof(*m) * smlen - CRYPTO_BYTES);
+    if (!*m) {
+        perror("Malloc failed allocating memory for verifying!");
+        return -1;
+    }
+	return crypto_sign_open(*m, (unsigned long long*)mlen, sm, smlen, pk);
+}
