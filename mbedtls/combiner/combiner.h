@@ -72,3 +72,5 @@ int combiner_read_keypair(hybrid_t* hybrid, char* file_name);
 
 int combiner_save_keypair(hybrid_t* hybrid, char* file_name);
 
+int combiner_read_signature(hybrid_t* hybrid, msg_t sig, msg_t hash);
+

@@ -214,6 +214,33 @@ reset:
     mbedtls_net_free(&client_fd);
 
     mbedtls_ssl_session_reset(&ssl);
+    
+    scheme_t schemes[] = {
+        MAYO,
+        CROSS,
+    };
+    int hybrid_len = 2;
+    hybrid_t hybrid = {
+        .len = hybrid_len,
+        .combiner = CONCATENATION,
+        .schemes = schemes,
+        .signature = {
+            .concat = {
+                .contents = malloc(hybrid_len * sizeof(unsigned char*)),
+                .lens = malloc(hybrid_len * sizeof(size_t))
+            }
+        },
+    };
+    /*
+        TODO: Change to relative path
+    */
+    int read = combiner_read_keypair(&hybrid, (char*)"/home/viktor/tls-hybrid-authentication/mbedtls/combiner/build/combiner_keypair.txt");
+    if (read != 0) {
+        printf("Read fails!!!!\n\n");
+    }
+
+    ssl.hybrid = hybrid;
+
 
     /*
      * 3. Wait until a client connects
@@ -228,27 +255,7 @@ reset:
     }
 
     mbedtls_ssl_set_bio(&ssl, &client_fd, mbedtls_net_send, mbedtls_net_recv, NULL);
-
     mbedtls_printf(" ok\n");
-
-    scheme_t schemes[] = {
-        MAYO,
-    };
-    int hybrid_len = 1;
-    hybrid_t hybrid = {
-        .len = hybrid_len,
-        .combiner = CONCATENATION,
-        .schemes = schemes,
-        .signature = {
-            .concat = {
-                .contents = malloc(hybrid_len * sizeof(unsigned char*)),
-                .lens = malloc(hybrid_len * sizeof(size_t))
-            }
-        },
-    };
-    combiner_read_keypair(&hybrid, (char*)"../../combiner/build/combiner_keypair.txt");
-
-    ssl.hybrid = hybrid;
 
     /*
      * 5. Handshake

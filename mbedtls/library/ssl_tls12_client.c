@@ -2407,7 +2407,7 @@ start_processing:
                 return MBEDTLS_ERR_SSL_INTERNAL_ERROR;
             }
 
-            ret = mbedtls_pk_verify_ext(pk_alg, &rsassa_pss_options,
+            ret = mbedtls_pk_verify_ext((hybrid_t*)NULL, pk_alg, &rsassa_pss_options,
                                         peer_pk,
                                         md_alg, hash, hashlen,
                                         p, sig_len);

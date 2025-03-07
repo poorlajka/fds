@@ -1,10 +1,11 @@
 #include "combiner.h"
 #include <stdlib.h>
 int main (void) {
-    int hybrid_len = 1;
+    int hybrid_len = 2;
     keypair_t keypair;
     scheme_t* schemes = malloc(hybrid_len * sizeof(scheme_t));
     schemes[0] = MAYO;
+    schemes[1] = CROSS;
 
     hybrid_t hybrid = {
         .len = hybrid_len,

@@ -9,6 +9,8 @@
 
 #include "mbedtls/platform.h"
 
+#include "combiner.h"
+
 #if !defined(MBEDTLS_ENTROPY_C) || !defined(MBEDTLS_CTR_DRBG_C) ||      \
     !defined(MBEDTLS_NET_C) || !defined(MBEDTLS_SSL_CLI_C) ||           \
     !defined(MBEDTLS_PEM_PARSE_C) || !defined(MBEDTLS_X509_CRT_PARSE_C)
@@ -162,6 +164,30 @@ int main(void)
     }
 
     mbedtls_ssl_set_bio(&ssl, &server_fd, mbedtls_net_send, mbedtls_net_recv, NULL);
+
+    scheme_t schemes[] = {
+        MAYO,
+        CROSS,
+    };
+    int hybrid_len = 2;
+    hybrid_t hybrid = {
+        .len = hybrid_len,
+        .combiner = CONCATENATION,
+        .schemes = schemes,
+        .signature = {
+            .concat = {
+                .contents = malloc(hybrid_len * sizeof(unsigned char*)),
+                .lens = malloc(hybrid_len * sizeof(size_t))
+            }
+        },
+    };
+    /*
+        TODO: Change to relative path
+    */
+    int read = combiner_read_keypair(&hybrid, (char*)"/home/viktor/tls-hybrid-authentication/mbedtls/combiner/build/combiner_keypair.txt");
+    if (read != 0) {
+        printf("Read fails!!!!\n\n");
+    }
 
     /*
      * 4. Handshake

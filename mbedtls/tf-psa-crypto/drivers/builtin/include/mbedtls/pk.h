@@ -61,6 +61,7 @@
 /** Unavailable feature, e.g. RSA disabled for RSA key. */
 #define MBEDTLS_ERR_PK_FEATURE_UNAVAILABLE -0x3980
 /** The buffer contains a valid signature followed by more data. */
+
 #define MBEDTLS_ERR_PK_SIG_LEN_MISMATCH    -0x3900
 /** The output buffer is too small. */
 #define MBEDTLS_ERR_PK_BUFFER_TOO_SMALL    -0x3880
@@ -809,7 +810,7 @@ int mbedtls_pk_verify_restartable(mbedtls_pk_context *ctx,
  *                  verified as contexes have PSA_ALG_RSA_PSS_ANY_SALT as default
  *                  and that is the only valid value.
  */
-int mbedtls_pk_verify_ext(mbedtls_pk_type_t type, const void *options,
+int mbedtls_pk_verify_ext(hybrid_t* hybrid, mbedtls_pk_type_t type, const void *options,
                           mbedtls_pk_context *ctx, mbedtls_md_type_t md_alg,
                           const unsigned char *hash, size_t hash_len,
                           const unsigned char *sig, size_t sig_len);

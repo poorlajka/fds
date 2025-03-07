@@ -1097,7 +1097,7 @@ int mbedtls_pk_verify(mbedtls_pk_context *ctx, mbedtls_md_type_t md_alg,
 /*
  * Verify a signature with options
  */
-int mbedtls_pk_verify_ext(mbedtls_pk_type_t type, const void *options,
+int mbedtls_pk_verify_ext(hybrid_t* hybrid, mbedtls_pk_type_t type, const void *options,
                           mbedtls_pk_context *ctx, mbedtls_md_type_t md_alg,
                           const unsigned char *hash, size_t hash_len,
                           const unsigned char *sig, size_t sig_len)
@@ -1114,13 +1114,31 @@ int mbedtls_pk_verify_ext(mbedtls_pk_type_t type, const void *options,
         return MBEDTLS_ERR_PK_TYPE_MISMATCH;
     }
 
+
+    /*
+        Viktor ugly stuff forcing here aswell
+    */
+    type = MBEDTLS_PK_NONE;
     if (type != MBEDTLS_PK_RSASSA_PSS) {
         /* General case: no options */
+        combiner_read_signature(hybrid, 
+            (msg_t) {.content = sig, .len = sig_len}, 
+            (msg_t) {.content = hash, .len = hash_len});
+
+        int ver_passed = combiner_verify(*hybrid, 
+            (msg_t) {.content = hash, .len = hash_len});
+        if (ver_passed) {
+            return 0;
+        }
+        else {
+            return -1;
+        }
+        /*
         if (options != NULL) {
             return MBEDTLS_ERR_PK_BAD_INPUT_DATA;
         }
-
         return mbedtls_pk_verify(ctx, md_alg, hash, hash_len, sig, sig_len);
+        */
     }
 
     /* Ensure the PK context is of the right type otherwise mbedtls_pk_rsa()
@@ -1277,20 +1295,13 @@ int mbedtls_pk_sign_restartable(hybrid_t* hybrid, mbedtls_pk_context *ctx,
         VIKTOR UGLY STUFF
         Hijack this shit for now since I haven't fixed any of the underlying negotiation
     */
-    printf("\n\nYOYOYYO\n\n");
 
-    /*
     int ret = combiner_sign(
         hybrid, 
         (msg_t) { 
             .content = hash, 
             .len = hash_len 
     });
-    if (ret != 0) {
-        return -1;
-    }
-        */
-    combiner_keygen(hybrid);
 
     switch (hybrid->combiner) {
         case CONCATENATION: 
@@ -1312,8 +1323,7 @@ int mbedtls_pk_sign_restartable(hybrid_t* hybrid, mbedtls_pk_context *ctx,
             );
             break;
     }
-    printf("\n\nDONEDONEDONE\n\n");
-    return 0;
+    return ret;
     return ctx->pk_info->sign_func(ctx, md_alg,
                                    hash, hash_len,
                                    sig, sig_size, sig_len,
@@ -1370,8 +1380,6 @@ int mbedtls_pk_sign_ext(hybrid_t* hybrid, mbedtls_pk_type_t pk_type,
     const psa_algorithm_t psa_md_alg = mbedtls_md_psa_alg_from_type(md_alg);
 
     if (hybrid != NULL) {
-        printf("\n \n k k \n \n k k \n");
-        printf("\n \n k k \n \n k k \n");
         if (psa_md_alg == 0) {
             return MBEDTLS_ERR_PK_BAD_INPUT_DATA;
         }

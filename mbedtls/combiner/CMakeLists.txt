@@ -89,6 +89,11 @@ add_test(
 )
 ]]
 
+install(TARGETS mayo_5
+    EXPORT MbedTLSTargets
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
+
 install(TARGETS less_lib mayo_5_nistapi
     EXPORT MbedTLSTargets
     DESTINATION ${CMAKE_INSTALL_LIBDIR}

@@ -2,6 +2,7 @@
 
 #include <api.h>
 #include <mayo.h>
+#include <stdio.h>
 
 #ifdef ENABLE_PARAMS_DYNAMIC
 #define MAYO_PARAMS &MAYO_5
@@ -11,6 +12,7 @@
 
 int
 crypto_sign_keypair(unsigned char *pk, unsigned char *sk) {
+
     return mayo_keypair(MAYO_PARAMS, pk, sk);
 }
 

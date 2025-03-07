@@ -40,6 +40,7 @@ int test_hybrid(combiner_t combiner, size_t hybrid_len, scheme_t* schemes) {
 
     int ret;
     ret = combiner_read_keypair(&hybrid, "combiner_keypair.txt");
+    //ret = combiner_keygen(&hybrid);
     if (ret < 0) {
         printf("\033[0;31mKeys not successfully generated\033[0;37m\n");
         return -1;
@@ -85,7 +86,7 @@ int test_hybrid(combiner_t combiner, size_t hybrid_len, scheme_t* schemes) {
 
     bool sig_pass = combiner_verify(hybrid, message);
     if (!sig_pass) {
-        printf("\033[0;31mSig verify did not pass\033[0;37m\n");
+        printf("\034[0;31mSig verify did not pass\033[0;37m\n");
         return -1;
     }
     else {
@@ -120,7 +121,7 @@ int test_nesting(scheme_t* schemes, int hybrid_len) {
 
 int main (void) {
     srand(time(NULL));
-    int hybrid_len = 1;
+    int hybrid_len = 2;
     scheme_t* schemes = malloc(hybrid_len * sizeof(scheme_t));
     scheme_t available_schemes[] = {
         CROSS,
@@ -142,6 +143,7 @@ int main (void) {
     }
     */
     schemes[0] = MAYO;
+    schemes[1] = CROSS;
     printf("\033[0;37m\n");
 
     int iterations = 1;
