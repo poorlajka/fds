@@ -8,7 +8,7 @@ int less_crypto_publickeybytes(void);
 
 int less_crypto_bytes(void);
 
-int less_crypto_sign_keypair(unsigned char **pk, unsigned char **sk);
+int less_crypto_sign_keypair(unsigned char *pk, unsigned char *sk);
 
 int less_crypto_sign(unsigned char **sm, unsigned long long *smlen,
             const unsigned char *m, unsigned long long mlen,

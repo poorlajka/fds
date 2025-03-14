@@ -16,7 +16,7 @@ int snova_crypto_bytes(void) {
     return CRYPTO_BYTES;
 }
 
-int snova_crypto_sign_keypair(unsigned char **pk, unsigned char **sk) {
+int snova_crypto_sign_keypair(unsigned char *pk, unsigned char *sk) {
     snova_init();
     uint8_t entropy_input[48];
     for (int i = 0; i < 48; i++) {
@@ -24,9 +24,7 @@ int snova_crypto_sign_keypair(unsigned char **pk, unsigned char **sk) {
     }
     randombytes_init(entropy_input, NULL, 256);
 
-    *pk = malloc(CRYPTO_PUBLICKEYBYTES);
-    *sk = malloc(CRYPTO_SECRETKEYBYTES);
-	return SNOVA_crypto_sign_keypair(*pk, *sk);
+	return SNOVA_crypto_sign_keypair(pk, sk);
 }
 
 int snova_crypto_sign(unsigned char **sm, unsigned long long *smlen,

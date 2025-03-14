@@ -14,10 +14,8 @@ int mayo_crypto_bytes(void) {
     return CRYPTO_BYTES;
 }
 
-int mayo_crypto_sign_keypair(unsigned char **pk, unsigned char **sk) {
-    *pk = malloc(CRYPTO_PUBLICKEYBYTES);
-    *sk = malloc(CRYPTO_SECRETKEYBYTES);
-	return crypto_sign_keypair(*pk, *sk);
+int mayo_crypto_sign_keypair(unsigned char *pk, unsigned char *sk) {
+	return crypto_sign_keypair(pk, sk);
 }
 
 int mayo_crypto_sign(unsigned char **sm, unsigned long long *smlen,

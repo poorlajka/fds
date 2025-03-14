@@ -7,6 +7,9 @@
 
 #include "common.h"
 
+#include "combiner.h"
+#include "mbedtls/private_access.h"
+
 #include "mbedtls/platform_util.h"
 
 #if defined(MBEDTLS_PK_C)
@@ -812,6 +815,111 @@ static int ecdsa_sign_wrap(mbedtls_pk_context *pk, mbedtls_md_type_t md_alg,
 }
 #endif /* MBEDTLS_USE_PSA_CRYPTO */
 #endif /* PSA_HAVE_ALG_ECDSA_SIGN */
+
+/*
+    VIKTOR HERE
+*/
+typedef hybrid_t mbedtls_pqc_hybrid_context;
+
+
+int mbedtls_qpc_hybrid_write_pubkey(const mbedtls_pqc_hybrid_context *hybrid, unsigned char *start,
+                             unsigned char **p) {
+    int ret = memcpy(start, hybrid->keypair.public_key, hybrid->keypair.public_key_len);
+    *p = start + hybrid->keypair.public_key_len;
+    if (ret == NULL) {
+        return -1;
+    }
+    return 0;
+}
+
+static void* pqc_hybrid_alloc (void) {
+    return mbedtls_calloc(1, sizeof(mbedtls_pqc_hybrid_context));
+}
+
+static void* pqc_hybrid_alloc (void) {
+    return mbedtls_calloc(1, sizeof(mbedtls_pqc_hybrid_context));
+}
+
+static void pqc_hybrid_free (void* ctx) {
+    mbedtls_free(ctx);
+}
+
+static size_t pqc_hybrid_bitlen (mbedtls_pk_context *pk) {
+    const mbedtls_pqc_hybrid_context* hybrid = (const mbedtls_pqc_hybrid_context*) pk->pk_ctx;
+    return hybrid->len;
+}
+
+static int pqc_hybrid_sign (mbedtls_pk_context *pk, mbedtls_md_type_t md_alg,
+                             const unsigned char *hash, size_t hash_len,
+                             unsigned char *sig, size_t sig_size, size_t *sig_len,
+                             int (*f_rng)(void *, unsigned char *, size_t), void *p_rng) {
+    printf("%p %u %p %zu %p %zu %p %p %p", pk, md_alg, hash, hash_len, sig, sig_size, sig_len, f_rng, p_rng);
+
+    mbedtls_pqc_hybrid_context* hybrid = (mbedtls_pqc_hybrid_context*) pk->pk_ctx;
+
+    int ret = combiner_sign(
+        hybrid, 
+        (msg_t) { 
+            .content = hash, 
+            .len = hash_len 
+    });
+
+    switch (hybrid->combiner) {
+        case CONCATENATION: 
+            size_t offset = 0;
+            for (size_t i = 0; i < hybrid->len; ++i) {
+                memcpy(
+                    sig + offset,
+                    hybrid->signature.concat.contents[i],
+                    hybrid->signature.concat.lens[i]
+                );
+                offset += hybrid->signature.concat.lens[i];
+            }
+            *sig_len += offset;
+            break;
+        case STRONG_NESTING: 
+            memcpy(
+                sig,
+                hybrid->signature.nesting.content,
+                hybrid->signature.nesting.len
+            );
+            break;
+    }
+    return ret;
+}
+
+static int pqc_hybrid_verify (mbedtls_pk_context *pk, mbedtls_md_type_t md_alg,
+                           const unsigned char *hash, size_t hash_len,
+                           const unsigned char *sig, size_t sig_len) {
+    printf("%p %u %p %zu %p %zu", pk, md_alg, hash, hash_len, sig, sig_len);
+
+    const mbedtls_pqc_hybrid_context* hybrid = (const mbedtls_pqc_hybrid_context*) pk->pk_ctx;
+    combiner_read_signature(hybrid, 
+        (msg_t) {.content = sig, .len = sig_len}, 
+        (msg_t) {.content = hash, .len = hash_len});
+
+    return combiner_verify(*hybrid, 
+        (msg_t) {.content = hash, .len = hash_len});
+}
+
+static int pqc_hybrid_can_do (mbedtls_pk_type_t type) {
+    return type == MBEDTLS_PK_PQC_HYBRID; 
+}
+
+const mbedtls_pk_info_t mbedtls_pqc_hybrid_info = {
+    .type = MBEDTLS_PK_PQC_HYBRID,
+    .name = "PQC Hybrid",
+    .get_bitlen = pqc_hybrid_bitlen,
+    .can_do = pqc_hybrid_can_do,
+    .sign_func = pqc_hybrid_sign,
+    .verify_func = pqc_hybrid_verify,
+    .decrypt_func = NULL,
+    .encrypt_func = NULL,
+    .check_pair_func = NULL,
+    .ctx_alloc_func = pqc_hybrid_alloc,
+    .ctx_free_func = pqc_hybrid_free,
+    .debug_func = NULL,
+};
 
 #if defined(MBEDTLS_ECDSA_C) && defined(MBEDTLS_ECP_RESTARTABLE)
 /* Forward declarations */

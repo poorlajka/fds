@@ -14,7 +14,7 @@
 #include "sdith_wrapper.h"
 #include "faest_wrapper.h"
 
-void print_b (const void *ptr, size_t n) {
+void print_b(const void *ptr, size_t n) {
     const unsigned char *byte = (const unsigned char *)ptr;
     for (size_t i = 0; i < n; i++) {
         printf("%02X", byte[i]); 
@@ -22,7 +22,8 @@ void print_b (const void *ptr, size_t n) {
     printf("\n");
 }
 
-char* scheme_t_to_str (scheme_t scheme) {
+
+char* scheme_t_to_str(scheme_t scheme) {
     switch (scheme) {
         case CROSS:
             return "CROSS";
@@ -44,34 +45,7 @@ char* scheme_t_to_str (scheme_t scheme) {
     return "Unknown!";
 }
 
-scheme_t str_to_scheme_t (char* str) {
-    if (strncmp(str, "CROSS", strlen(str)) == 0) {
-        return CROSS;
-    }
-    else if (strncmp(str, "LESS", strlen(str)) == 0) {
-        return LESS;
-    }
-    else if (strncmp(str, "MAYO", strlen(str)) == 0) {
-        return MAYO;
-    }
-    else if (strncmp(str, "SNOVA", strlen(str)) == 0) {
-        return SNOVA;
-    }
-    else if (strncmp(str, "QRUOV", strlen(str)) == 0) {
-        return QRUOV;
-    }
-    else if (strncmp(str, "UOV", strlen(str)) == 0) {
-        return UOV;
-    }
-    else if (strncmp(str, "SDITH", strlen(str)) == 0) {
-        return SDITH;
-    }
-    else if (strncmp(str, "FAEST", strlen(str)) == 0) {
-        return FAEST;
-    }
-}
-
-typedef int (*crypto_sign_keypair_t)(unsigned char *pk, unsigned char *sk);
+typedef int (*crypto_sign_keypair_t)(unsigned char **pk, unsigned char **sk);
 
 typedef int (*crypto_sign_t)(unsigned char **sm, unsigned long long *smlen, 
     const unsigned char *m, unsigned long long mlen,
@@ -149,55 +123,35 @@ int (*crypto_bytes_constants[]) (void) = {
 };
 
 int combiner_keygen (hybrid_t* hybrid) {
-
-    size_t public_key_len = 0, secret_key_len = 0;
-    for (int i = 0; i < hybrid->len; ++i) {
-        scheme_t scheme = hybrid->schemes[i];
-        public_key_len += crypto_publickeybytes_constants[scheme]();
-        secret_key_len += crypto_secretkeybytes_constants[scheme]();
-    }
-
-
-    hybrid->keypair.public_key_len = public_key_len;
-    hybrid->keypair.secret_key_len = secret_key_len;
-
-    hybrid->keypair.public_key = malloc(sizeof(*hybrid->keypair.public_key) * public_key_len);
-    hybrid->keypair.secret_key = malloc(sizeof(*hybrid->keypair.secret_key) * secret_key_len);
+    hybrid->keypair.public_key = malloc(sizeof(hybrid->keypair.public_key) * hybrid->len);
+    hybrid->keypair.secret_key = malloc(sizeof(hybrid->keypair.secret_key) * hybrid->len);
 
     int ret;
-    size_t pk_offset = 0, sk_offset = 0;
     for (int i = 0; i < hybrid->len; ++i) {
-        scheme_t scheme = hybrid->schemes[i];
         ret = crypto_sign_keypair_algorithms[hybrid->schemes[i]](
-            hybrid->keypair.public_key + pk_offset,
-            hybrid->keypair.secret_key + sk_offset
+            &hybrid->keypair.public_key[i],
+            &hybrid->keypair.secret_key[i]
         );
-
         if (ret != 0) {
             fprintf(stderr, "Keypair generation failed!\n");
             return ret;
         }
-
-        pk_offset += crypto_publickeybytes_constants[scheme]();
-        sk_offset += crypto_secretkeybytes_constants[scheme]();
     }
     return 0;
 }
 
-int concat_sign (hybrid_t* hybrid, unsigned char* secret_key,
+int concat_sign (hybrid_t* hybrid, unsigned char** secret_key,
                    msg_t message) {
     unsigned char* signature;
     unsigned long long signature_len;
     int ret;
-    size_t sk_offset = 0;
     for (int i = 0; i < hybrid->len; ++i) {
-        scheme_t scheme = hybrid->schemes[i];
         ret = crypto_sign_algorithms[hybrid->schemes[i]](
             &signature,
             &signature_len,
             message.content,
             message.len,
-            secret_key + sk_offset
+            secret_key[i]
         );
 
         if (ret != 0) {
@@ -207,13 +161,11 @@ int concat_sign (hybrid_t* hybrid, unsigned char* secret_key,
 
         hybrid->signature.concat.contents[i] = signature;
         hybrid->signature.concat.lens[i] = signature_len;
-
-        sk_offset += crypto_secretkeybytes_constants[scheme]();
     }
     return 0;
 }
 
-int nesting_sign (hybrid_t* hybrid, unsigned char* secret_key,
+int nesting_sign (hybrid_t* hybrid, unsigned char** secret_key,
                    msg_t message) {
     unsigned char* signature;
     unsigned long long signature_len;
@@ -224,7 +176,7 @@ int nesting_sign (hybrid_t* hybrid, unsigned char* secret_key,
         &signature_len,
         message.content,
         message.len,
-        secret_key
+        secret_key[0]
     );
 
     if (ret != 0) {
@@ -235,9 +187,7 @@ int nesting_sign (hybrid_t* hybrid, unsigned char* secret_key,
     msg_t original_message = message;
 
     unsigned char* new_message;
-    size_t sk_offset = crypto_secretkeybytes_constants[hybrid->schemes[0]]();
     for (int i = 1; i < hybrid->len; ++i) {
-        scheme_t scheme = hybrid->schemes[i];
         new_message = malloc(
             sizeof(*new_message) * (original_message.len + signature_len)
         );
@@ -245,6 +195,7 @@ int nesting_sign (hybrid_t* hybrid, unsigned char* secret_key,
             fprintf(stderr, "Malloc failed in nesting_sign!\n");
             return -1;
         }
+
 
         memcpy(
             new_message, 
@@ -260,18 +211,14 @@ int nesting_sign (hybrid_t* hybrid, unsigned char* secret_key,
         message.len = original_message.len + signature_len;
         message.content = new_message;
 
-        //printf("\nkey len = %zu\n", hybrid->keypair.secret_key_len);
-        printf("\nskey offset = %zu\n", sk_offset);
-
         ret = crypto_sign_algorithms[hybrid->schemes[i]](
             &signature,
             &signature_len,
             message.content,
             message.len,
-            secret_key + sk_offset
+            secret_key[i]
         );
 
-        sk_offset += crypto_secretkeybytes_constants[scheme]();
         if (ret != 0) {
             fprintf(stderr, "Nesting signature generation failed!\n");
             return ret;
@@ -297,25 +244,29 @@ int combiner_sign (hybrid_t* hybrid, msg_t message) {
     return -1;
 }
 
-int concat_verify (const hybrid_t hybrid, unsigned char* public_key,
+int concat_verify (hybrid_t hybrid, unsigned char** public_key,
                     msg_t message) {
 
     unsigned char* decrypted_msg;
     unsigned long long decrypted_msg_len;
     int ret;
 
-    size_t pk_offset = 0;
     for (int i = 0; i < hybrid.len; ++i) {
-        scheme_t scheme = hybrid.schemes[i];
         unsigned char* signature = hybrid.signature.concat.contents[i];
         unsigned long long signature_len = hybrid.signature.concat.lens[i];
+        printf("\nhello verify \n");
 
+
+        printf("\nhello verify \n");
+        print("\n");
+        print_b(hybrid.keypair.public_key[public_key] 200);
+        print("\n");
         ret = crypto_sign_open_algorithms[hybrid.schemes[i]](
             &decrypted_msg,
             &decrypted_msg_len,
             signature,
             signature_len,
-            public_key + pk_offset,
+            public_key[i],
             message.len,
             hybrid.len
         );
@@ -329,12 +280,11 @@ int concat_verify (const hybrid_t hybrid, unsigned char* public_key,
             return 0;
         }
         printf("Recovered msg: \"%.*s\"\n", decrypted_msg_len, decrypted_msg);
-        pk_offset += crypto_publickeybytes_constants[scheme]();
     }
     return 1;
 }
 
-int nesting_verify (hybrid_t hybrid, unsigned char* public_key, 
+int nesting_verify (hybrid_t hybrid, unsigned char** public_key, 
                      msg_t message) {
 
     unsigned char* signature = hybrid.signature.nesting.content;
@@ -343,19 +293,14 @@ int nesting_verify (hybrid_t hybrid, unsigned char* public_key,
     unsigned long long decrypted_msg_len;
     int ret;
 
-    // TODO
-
-    size_t pk_offset = hybrid.keypair.public_key_len;
     for (int i = hybrid.len-1; i > -1; i--) {
-        scheme_t scheme = hybrid.schemes[i];
-        pk_offset -= crypto_publickeybytes_constants[scheme]();
 
         ret = crypto_sign_open_algorithms[hybrid.schemes[i]](
             &decrypted_msg,
             &decrypted_msg_len,
             signature,
             signature_len,
-            public_key += pk_offset,
+            public_key[i],
             message.len,
             hybrid.len
         );
@@ -386,90 +331,90 @@ int combiner_verify (hybrid_t hybrid, msg_t message) {
     return 0;
 }
 
-int combiner_save_keypair(hybrid_t* hybrid, const char* file_name) {
+int combiner_save_keypair(hybrid_t* hybrid, char* file_name) {
 
     FILE* file_ptr;
     if ((file_ptr = fopen(file_name, "w+b")) == NULL) {
         return -1;
     }
 
-    printf("\npkey len: %zu, skey len: %zu\n", hybrid->keypair.public_key_len, hybrid->keypair.secret_key_len);
-    if (fwrite(
-        hybrid->keypair.secret_key, 
-        sizeof(*hybrid->keypair.secret_key), 
-        hybrid->keypair.secret_key_len, 
-        file_ptr) != hybrid->keypair.secret_key_len) {
-        fclose(file_ptr);
-        return -1;
-    }
+    for (int i = 0; i < hybrid->len; ++i) {
+        scheme_t scheme = hybrid->schemes[i];
+        unsigned long long skey_size = crypto_secretkeybytes_constants[scheme]();
+        unsigned long long pkey_size = crypto_publickeybytes_constants[scheme]();
 
-    if (fwrite(
-        hybrid->keypair.public_key, 
-        sizeof(*hybrid->keypair.public_key), 
-        hybrid->keypair.public_key_len, 
-        file_ptr) != hybrid->keypair.public_key_len) {
-        fclose(file_ptr);
-        return -1;
+        if (fwrite(
+            hybrid->keypair.secret_key[i], 
+            sizeof(hybrid->keypair.secret_key[i]), 
+            skey_size, 
+            file_ptr) != skey_size) {
+            fclose(file_ptr);
+            return -1;
+        }
+
+        if (fwrite(
+            hybrid->keypair.public_key[i], 
+            sizeof(hybrid->keypair.public_key[i]), 
+            pkey_size, 
+            file_ptr) != pkey_size) {
+            fclose(file_ptr);
+            return -1;
+        }
     }
     fclose(file_ptr);
     return 0;
 }
 
-int combiner_read_keypair(hybrid_t* hybrid, const char* file_name) {
-
-    size_t public_key_len = 0, secret_key_len = 0;
-    for (int i = 0; i < hybrid->len; ++i) {
-        scheme_t scheme = hybrid->schemes[i];
-        public_key_len += crypto_publickeybytes_constants[scheme]();
-        secret_key_len += crypto_secretkeybytes_constants[scheme]();
-    }
-
-    hybrid->keypair.public_key_len = public_key_len;
-    hybrid->keypair.secret_key_len = secret_key_len;
-
-    hybrid->keypair.public_key = malloc(sizeof(*hybrid->keypair.public_key) * public_key_len);
-    hybrid->keypair.secret_key = malloc(sizeof(*hybrid->keypair.secret_key) * secret_key_len);
+int combiner_read_keypair(hybrid_t* hybrid, char* file_name) {
+    hybrid->keypair.public_key = malloc(sizeof(hybrid->keypair.public_key) * hybrid->len);
+    hybrid->keypair.secret_key = malloc(sizeof(hybrid->keypair.secret_key) * hybrid->len);
 
     FILE* file_ptr;
     if ((file_ptr = fopen(file_name, "r+b")) == NULL) {
         return -1;
     }
 
-    if (fread(
-        hybrid->keypair.secret_key, 
-        sizeof(*hybrid->keypair.secret_key), 
-        secret_key_len, 
-        file_ptr) != secret_key_len) {
-        fclose(file_ptr);
-        return -1;
-    }
+    for (int i = 0; i < hybrid->len; ++i) {
+        scheme_t scheme = hybrid->schemes[i];
+        unsigned long long skey_size = crypto_secretkeybytes_constants[scheme]();
+        unsigned long long pkey_size = crypto_publickeybytes_constants[scheme]();
 
-    if (fread(
-        hybrid->keypair.public_key, 
-        sizeof(*hybrid->keypair.public_key), 
-        public_key_len, 
-        file_ptr) != public_key_len) {
-        fclose(file_ptr);
-        return -1;
-    }
+        hybrid->keypair.secret_key[i] = malloc(skey_size);
+        hybrid->keypair.public_key[i] = malloc(pkey_size);
 
+        hybrid->keypair.secret_key[i] = malloc(sizeof(hybrid->keypair.secret_key[i]) * skey_size);
+        if (fread(
+            hybrid->keypair.secret_key[i], 
+            sizeof(hybrid->keypair.secret_key[i]), 
+            skey_size, 
+            file_ptr) != skey_size) {
+            fclose(file_ptr);
+            return -1;
+        }
+
+        hybrid->keypair.public_key[i] = malloc(sizeof(hybrid->keypair.public_key[i]) * pkey_size);
+        if (fread(
+            hybrid->keypair.public_key[i], 
+            sizeof(hybrid->keypair.public_key[i]), 
+            pkey_size, 
+            file_ptr) != pkey_size) {
+            fclose(file_ptr);
+            return -1;
+        }
+
+    }
     fclose(file_ptr);
     return 0;
 }
 
-int combiner_read_signature(const hybrid_t* hybrid, msg_t sig, msg_t hash) {
+int combiner_read_signature(hybrid_t* hybrid, msg_t sig, msg_t hash) {
     switch (hybrid->combiner) {
         case CONCATENATION:
-            size_t sig_offset = 0;
             for (int i = 0; i < hybrid->len; ++i) {
                 scheme_t scheme = hybrid->schemes[i];
-                size_t sig_len = hash.len + crypto_bytes_constants[scheme]();
-
-                hybrid->signature.concat.lens[i] = sig_len;
-                hybrid->signature.concat.contents[i] = malloc(sig_len);
-                memcpy(hybrid->signature.concat.contents[i], sig.content + sig_offset, sig_len);
-
-                sig_offset += sig_len;
+                hybrid->signature.concat.lens[i] = hash.len + crypto_bytes_constants[scheme]();
+                hybrid->signature.concat.contents[i] = malloc(hybrid->signature.concat.lens[i]);
+                memcpy(hybrid->signature.concat.contents[i], sig.content, hybrid->signature.concat.lens[i]);
             }
             break;
         case STRONG_NESTING:

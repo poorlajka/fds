@@ -8,7 +8,7 @@ int cross_crypto_publickeybytes(void);
 
 int cross_crypto_bytes(void);
 
-int cross_crypto_sign_keypair(unsigned char **pk, unsigned char **sk);
+int cross_crypto_sign_keypair(unsigned char *pk, unsigned char *sk);
 
 int cross_crypto_sign(unsigned char **sm, unsigned long long *smlen,
             const unsigned char *m, unsigned long long mlen,

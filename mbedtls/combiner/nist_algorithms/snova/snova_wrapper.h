@@ -8,7 +8,7 @@ int snova_crypto_publickeybytes(void);
 
 int snova_crypto_bytes(void);
 
-int snova_crypto_sign_keypair(unsigned char **pk, unsigned char **sk);
+int snova_crypto_sign_keypair(unsigned char *pk, unsigned char *sk);
 
 int snova_crypto_sign(unsigned char **sm, unsigned long long *smlen,
             const unsigned char *m, unsigned long long mlen,

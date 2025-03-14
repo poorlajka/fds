@@ -245,8 +245,6 @@ static int ssl_tls13_parse_certificate_verify(mbedtls_ssl_context *ssl,
     algorithm = MBEDTLS_GET_UINT16_BE(p, 0);
     p += 2;
 
-    printf("i am a man made out of meat \n \n ");
-
     /* RFC 8446 section 4.4.3
      *
      * If the CertificateVerify message is sent by a server, the signature
@@ -270,8 +268,6 @@ static int ssl_tls13_parse_certificate_verify(mbedtls_ssl_context *ssl,
                                   (unsigned int) algorithm));
         goto error;
     }
-
-    printf("i am a passa da offering \n \n ");
 
     if (mbedtls_ssl_get_pk_type_and_md_alg_from_sig_alg(
             algorithm, &sig_alg, &md_alg) != 0) {
@@ -344,7 +340,6 @@ error:
 int mbedtls_ssl_tls13_process_certificate_verify(mbedtls_ssl_context *ssl)
 {
 
-    printf("\n\n\nHello hello hello\n\n\n");
 
 #if defined(MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_EPHEMERAL_ENABLED)
     int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
@@ -389,12 +384,10 @@ int mbedtls_ssl_tls13_process_certificate_verify(mbedtls_ssl_context *ssl)
                                       MBEDTLS_SSL_IS_CLIENT);
 
     /* Process the message contents */
-    printf("\n\n\nHello this that chello\n\n\n");
     MBEDTLS_SSL_PROC_CHK(ssl_tls13_parse_certificate_verify(
                              ssl, buf, buf + buf_len,
                              verify_buffer, verify_buffer_len));
 
-    printf("\n\n\nHello this that and that chello\n\n\n");
     MBEDTLS_SSL_PROC_CHK(mbedtls_ssl_add_hs_msg_to_checksum(
                              ssl, MBEDTLS_SSL_HS_CERTIFICATE_VERIFY,
                              buf, buf_len));
@@ -847,6 +840,7 @@ int mbedtls_ssl_tls13_write_certificate(mbedtls_ssl_context *ssl)
     MBEDTLS_SSL_PROC_CHK(mbedtls_ssl_add_hs_msg_to_checksum(
                              ssl, MBEDTLS_SSL_HS_CERTIFICATE, buf, msg_len));
 
+
     MBEDTLS_SSL_PROC_CHK(mbedtls_ssl_finish_handshake_msg(
                              ssl, buf_len, msg_len));
 cleanup:
@@ -1044,6 +1038,9 @@ int mbedtls_ssl_tls13_write_certificate_verify(mbedtls_ssl_context *ssl)
 
     MBEDTLS_SSL_PROC_CHK(ssl_tls13_write_certificate_verify_body(
                              ssl, buf, buf + buf_len, &msg_len));
+
+    //const size_t record_size_limit = mbedtls_ssl_get_output_max_frag_len(ssl);
+    //printf("\nRecor size: %zu\n", record_size_limit);
 
     MBEDTLS_SSL_PROC_CHK(mbedtls_ssl_add_hs_msg_to_checksum(
                              ssl, MBEDTLS_SSL_HS_CERTIFICATE_VERIFY,

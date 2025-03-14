@@ -14,11 +14,9 @@ int uov_crypto_bytes(void) {
     return CRYPTO_BYTES;
 }
 
-int uov_crypto_sign_keypair(unsigned char **pk, unsigned char **sk) {
+int uov_crypto_sign_keypair(unsigned char *pk, unsigned char *sk) {
 
-    *pk = malloc(CRYPTO_PUBLICKEYBYTES);
-    *sk = malloc(CRYPTO_SECRETKEYBYTES);
-	return UOV_crypto_sign_keypair(*pk, *sk);
+	return UOV_crypto_sign_keypair(pk, sk);
 }
 
 int uov_crypto_sign(unsigned char **sm, unsigned long long *smlen,

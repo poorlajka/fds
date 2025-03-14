@@ -217,7 +217,7 @@ reset:
     
     scheme_t schemes[] = {
         MAYO,
-        CROSS,
+        FAEST,
     };
     int hybrid_len = 2;
     hybrid_t hybrid = {

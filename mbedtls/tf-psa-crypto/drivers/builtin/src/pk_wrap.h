@@ -104,6 +104,12 @@ typedef struct {
 } mbedtls_rsa_alt_context;
 #endif
 
+
+/*
+    VIKTOR
+*/
+extern const mbedtls_pk_info_t mbedtls_pqc_hybrid_info;
+
 #if defined(MBEDTLS_RSA_C)
 extern const mbedtls_pk_info_t mbedtls_rsa_info;
 #endif

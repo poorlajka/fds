@@ -15,20 +15,14 @@ int cross_crypto_bytes(void) {
     return CRYPTO_BYTES;
 }
 
-int cross_crypto_sign_keypair(unsigned char **pk, unsigned char **sk) {
+int cross_crypto_sign_keypair(unsigned char *pk, unsigned char *sk) {
     // TODO: Get a better understanding of the seeding and posssible impact on performance!
     csprng_initialize(&platform_csprng_state,
                       (const unsigned char *)"012345678912345",
                       16,
                       0);
 
-    *pk = malloc(CRYPTO_PUBLICKEYBYTES);
-    *sk = malloc(CRYPTO_SECRETKEYBYTES);
-    if (!*pk || !*sk) {
-        perror("Malloc failed allocating memory for keypair!");
-        return -1;
-    }
-	return crypto_sign_keypair(*pk, *sk);
+	return crypto_sign_keypair(pk, sk);
 }
 
 int cross_crypto_sign(unsigned char **sm, unsigned long long *smlen,

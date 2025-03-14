@@ -17,6 +17,7 @@
 #include "mbedtls/error_common.h"
 #include "mbedtls/ecp.h"
 #include "pk_internal.h"
+#include "combiner.h"
 
 #include <string.h>
 

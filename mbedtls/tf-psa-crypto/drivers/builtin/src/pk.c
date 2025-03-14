@@ -111,6 +111,8 @@ void mbedtls_pk_restart_free(mbedtls_pk_restart_ctx *ctx)
 const mbedtls_pk_info_t *mbedtls_pk_info_from_type(mbedtls_pk_type_t pk_type)
 {
     switch (pk_type) {
+        case MBEDTLS_PK_PQC_HYBRID:
+            return &mbedtls_pqc_hybrid_info;
 #if defined(MBEDTLS_RSA_C)
         case MBEDTLS_PK_RSA:
             return &mbedtls_rsa_info;
@@ -1116,8 +1118,9 @@ int mbedtls_pk_verify_ext(hybrid_t* hybrid, mbedtls_pk_type_t type, const void *
 
 
     /*
-        Viktor ugly stuff forcing here aswell
+        VIKTOR ugly stuff forcing here aswell
     */
+
     type = MBEDTLS_PK_NONE;
     if (type != MBEDTLS_PK_RSASSA_PSS) {
         /* General case: no options */
@@ -1296,6 +1299,13 @@ int mbedtls_pk_sign_restartable(hybrid_t* hybrid, mbedtls_pk_context *ctx,
         Hijack this shit for now since I haven't fixed any of the underlying negotiation
     */
 
+    if (hybrid == NULL) {
+        return ctx->pk_info->sign_func(ctx, md_alg,
+                                    hash, hash_len,
+                                    sig, sig_size, sig_len,
+                                    f_rng, p_rng);
+    }
+
     int ret = combiner_sign(
         hybrid, 
         (msg_t) { 
@@ -1314,6 +1324,7 @@ int mbedtls_pk_sign_restartable(hybrid_t* hybrid, mbedtls_pk_context *ctx,
                 );
                 offset += hybrid->signature.concat.lens[i];
             }
+            *sig_len += offset;
             break;
         case STRONG_NESTING: 
             memcpy(
@@ -1324,10 +1335,6 @@ int mbedtls_pk_sign_restartable(hybrid_t* hybrid, mbedtls_pk_context *ctx,
             break;
     }
     return ret;
-    return ctx->pk_info->sign_func(ctx, md_alg,
-                                   hash, hash_len,
-                                   sig, sig_size, sig_len,
-                                   f_rng, p_rng);
 }
 
 /*

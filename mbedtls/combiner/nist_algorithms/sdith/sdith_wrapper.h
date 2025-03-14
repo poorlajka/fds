@@ -8,7 +8,7 @@ int sdith_crypto_publickeybytes(void);
 
 int sdith_crypto_bytes(void);
 
-int sdith_crypto_sign_keypair(unsigned char **pk, unsigned char **sk);
+int sdith_crypto_sign_keypair(unsigned char *pk, unsigned char *sk);
 
 int sdith_crypto_sign(unsigned char **sm, unsigned long long *smlen,
             const unsigned char *m, unsigned long long mlen,

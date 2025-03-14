@@ -3,6 +3,8 @@
 #include <stddef.h>
 #include <stdio.h>
 
+void print_b(const void *ptr, size_t n);
+
 typedef enum {
 // Code-based
     CROSS,
@@ -32,8 +34,10 @@ typedef enum {
 } combiner_t;
 
 typedef struct {
-    unsigned char** public_key;
-    unsigned char** secret_key;
+    unsigned char* public_key;
+    size_t public_key_len;
+    unsigned char* secret_key;
+    size_t secret_key_len;
 } keypair_t;
 
 typedef union {
@@ -62,15 +66,17 @@ typedef struct {
 
 char* scheme_t_to_str (scheme_t scheme);
 
+scheme_t str_to_scheme_t (char* str);
+
 int combiner_keygen (hybrid_t* hybrid);
 
 int combiner_sign (hybrid_t* hybrid, msg_t message);
 
-int combiner_verify (hybrid_t hybrid, msg_t message);
+int combiner_verify (const hybrid_t hybrid, msg_t message);
 
-int combiner_read_keypair(hybrid_t* hybrid, char* file_name);
+int combiner_read_keypair(hybrid_t* hybrid, const char* file_name);
 
-int combiner_save_keypair(hybrid_t* hybrid, char* file_name);
+int combiner_save_keypair(hybrid_t* hybrid, const char* file_name);
 
-int combiner_read_signature(hybrid_t* hybrid, msg_t sig, msg_t hash);
+int combiner_read_signature(const hybrid_t* hybrid, msg_t sig, msg_t hash);
 

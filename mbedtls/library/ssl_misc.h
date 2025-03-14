@@ -364,11 +364,11 @@ uint32_t mbedtls_ssl_get_extension_mask(unsigned int extension_type);
  * Check that we obey the standard's message size bounds
  */
 
-#if MBEDTLS_SSL_IN_CONTENT_LEN > 16384
+#if MBEDTLS_SSL_IN_CONTENT_LEN > 65536
 #error "Bad configuration - incoming record content too large."
 #endif
 
-#if MBEDTLS_SSL_OUT_CONTENT_LEN > 16384
+#if MBEDTLS_SSL_OUT_CONTENT_LEN > 65536
 #error "Bad configuration - outgoing record content too large."
 #endif
 

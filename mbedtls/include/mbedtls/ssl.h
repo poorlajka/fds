@@ -394,11 +394,11 @@
  * peers are using it too!
  */
 #if !defined(MBEDTLS_SSL_IN_CONTENT_LEN)
-#define MBEDTLS_SSL_IN_CONTENT_LEN 16384
+#define MBEDTLS_SSL_IN_CONTENT_LEN 65536
 #endif
 
 #if !defined(MBEDTLS_SSL_OUT_CONTENT_LEN)
-#define MBEDTLS_SSL_OUT_CONTENT_LEN 16384
+#define MBEDTLS_SSL_OUT_CONTENT_LEN 65536
 #endif
 
 /*

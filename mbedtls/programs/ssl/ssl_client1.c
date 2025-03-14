@@ -167,7 +167,7 @@ int main(void)
 
     scheme_t schemes[] = {
         MAYO,
-        CROSS,
+        FAEST,
     };
     int hybrid_len = 2;
     hybrid_t hybrid = {
@@ -188,6 +188,7 @@ int main(void)
     if (read != 0) {
         printf("Read fails!!!!\n\n");
     }
+    ssl.hybrid = hybrid;
 
     /*
      * 4. Handshake

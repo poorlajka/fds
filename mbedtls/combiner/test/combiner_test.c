@@ -134,9 +134,9 @@ int main (void) {
         FAEST,
     };
 
+    /*
     printf("\033[0;37m\n\n");
     printf("\033[0;33mRandom hybrid generated: ");
-    /*
     for (size_t i = 0; i < hybrid_len; ++i) {
         schemes[i] = available_schemes[rand() % (sizeof(available_schemes)/sizeof(scheme_t))];
         printf("%s ", scheme_t_to_str(schemes[i]), schemes[i]);

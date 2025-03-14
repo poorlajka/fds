@@ -6,6 +6,7 @@
  */
 
 #include "common.h"
+#include "combiner.h"
 
 #if defined(MBEDTLS_PK_WRITE_C)
 
@@ -55,6 +56,12 @@
 #define PK_MAX_EC_KEY_PAIR_SIZE         MBEDTLS_ECP_MAX_BYTES
 #endif
 
+/*
+    VIKTOR
+*/
+#define PK_MAX_PQC_HYBRID_PUBLIC_KEY_SIZE PSA_EXPORT_PUBLIC_KEY_MAX_SIZE
+#define PK_MAX_PQC_HYBRID_KEY_PAIR_SIZE MBEDTLS_PSA_MAX_EC_KEY_PAIR_LENGTH
+
 /******************************************************************************
  * Internal functions for RSA keys.
  ******************************************************************************/
@@ -89,6 +96,28 @@ static int pk_write_rsa_der(unsigned char **p, unsigned char *buf,
 /******************************************************************************
  * Internal functions for EC keys.
  ******************************************************************************/
+
+/*
+    VIKTOR
+*/
+static int pk_write_pqc_hybrid_pubkey(unsigned char **p, unsigned char *start,
+                                const mbedtls_pk_context *pk) {
+    mbedtls_pqc_hybrid_context* hybrid_context = (mbedtls_pqc_hybrid_context*) pk->pk_ctx;
+    size_t len = 0;
+    uint8_t buf[PK_MAX_PQC_HYBRID_PUBLIC_KEY_SIZE];
+
+    switch (hybrid_context->combiner) {
+        case CONCATENATION:
+            break;
+        case STRONG_NESTING:
+            break;
+    }
+    //memcpy(buf, pk->pub_raw, len);
+
+
+    return (int) len;
+}
+
 #if defined(PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY)
 #if defined(MBEDTLS_PK_USE_PSA_EC_DATA)
 static int pk_write_ec_pubkey(unsigned char **p, unsigned char *start,
@@ -423,6 +452,9 @@ int mbedtls_pk_write_pubkey(unsigned char **p, unsigned char *start,
     size_t len = 0;
 
 #if defined(MBEDTLS_RSA_C)
+    if (mbedtls_pk_get_type(key) == MBEDTLS_PK_PQC_HYBRID) {
+        MBEDTLS_ASN1_CHK_ADD(len, mbedtls_pqc_hybrid_write_pubkey(p, start, key));
+    } else
     if (mbedtls_pk_get_type(key) == MBEDTLS_PK_RSA) {
         MBEDTLS_ASN1_CHK_ADD(len, mbedtls_rsa_write_pubkey(mbedtls_pk_rsa(*key), start, p));
     } else

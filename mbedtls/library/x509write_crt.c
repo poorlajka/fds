@@ -185,6 +185,7 @@ static int mbedtls_x509write_crt_set_key_identifier(mbedtls_x509write_cert *ctx,
     size_t hash_length;
 #endif /* MBEDTLS_USE_PSA_CRYPTO */
 
+    printf("\n\nTHIS HAPPENS\n\n");
     memset(buf, 0, sizeof(buf));
     MBEDTLS_ASN1_CHK_ADD(len,
                          mbedtls_pk_write_pubkey(&c,

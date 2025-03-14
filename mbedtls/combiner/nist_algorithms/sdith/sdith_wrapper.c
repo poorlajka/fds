@@ -2,17 +2,21 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-int sdith_crypto_secretkeybytes = CRYPTO_SECRETKEYBYTES;
+int sdith_crypto_secretkeybytes(void) {
+    return CRYPTO_SECRETKEYBYTES;
+}
 
-int sdith_crypto_publickeybytes = CRYPTO_PUBLICKEYBYTES;
+int sdith_crypto_publickeybytes(void) {
+    return CRYPTO_PUBLICKEYBYTES;
+}
 
-int sdith_crypto_bytes = CRYPTO_BYTES;
+int sdith_crypto_bytes(void) {
+    return CRYPTO_BYTES;
+}
 
-int sdith_crypto_sign_keypair(unsigned char **pk, unsigned char **sk) {
+int sdith_crypto_sign_keypair(unsigned char *pk, unsigned char *sk) {
 
-    *pk = malloc(CRYPTO_PUBLICKEYBYTES);
-    *sk = malloc(CRYPTO_SECRETKEYBYTES);
-	return SDITH_crypto_sign_keypair(*pk, *sk);
+	return SDITH_crypto_sign_keypair(pk, sk);
 }
 
 int sdith_crypto_sign(unsigned char **sm, unsigned long long *smlen,
